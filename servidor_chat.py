@@ -1,44 +1,10 @@
 import socket
 import select
-import sys
 import signal
 from typing import Dict
+from servidor_controller import cerrar_servidor, broadcast, remover_clientes
 
-def broadcast(mensaje, socket_emisor):
-    nombre_emisor = clientes.get(socket_emisor, "Servidor") #get obtiene el valor de socket emisor, y si es none, devuelve Servidor
-    mensaje_final = f"{nombre_emisor}: {mensaje} \n"
-
-    for cliente in list(clientes.keys()):
-        if cliente != socket_emisor:#enviamos mensaje a todos los sockets, excepto al emisor
-            try:
-                cliente.send(mensaje_final.encode('utf-8'))
-            except:
-                #Si da error, el cliente se desconecto, entonces lo quitamos
-                remover_clientes(cliente)
-
-def remover_clientes(sock):
-    if sock in clientes:
-        nombre = clientes[sock] #guardamos el nombre de usuario del socket a eliminar para luego imprimirlo
-        del clientes[sock] #eliminamos del diccionario el socket mandado
-
-        print(f"{nombre} se ha desconectado.")
-        broadcast(f"{nombre} ha salido del chat.\n", sock) #avisamos al chat que un usuario se desconecto
-    try:
-        sock.close() #cerramos el socket para liberar recursos
-    except:
-        pass #por si ya estaba cerrado
-
-def cerrar_servidor(sig=None, frame=None):
-    print("Cerrando servidor y desconectando clientes")
-    #con el for desconectamos todos los clientes
-    for cliente in list(clientes.keys()):
-        cliente.close()
-    
-    #luego cerramos el servidor y salimos
-    socket_servidor.close()
-    sys.exit()
-
-signal.signal(signal.SIGINT, cerrar_servidor) #esto captura el Ctrl + C para cerrar de manera adecuada el servidor
+signal.signal(signal.SIGINT, lambda sig, frame: cerrar_servidor(socket_servidor, clientes)) #esto captura el Ctrl + C para cerrar de manera adecuada el servidor
 
 #Creamos un socket servidor            #AF_INET Define la creacion del socket con el protocolo IPv4
 socket_servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)#SOCK_STEAM es para crear el socket con el protocolo TCP
@@ -82,7 +48,7 @@ while True:
 
                 #imprimimos mensajes de que se ha unido al chat
                 print(f"{nombre} se ha unido al chat")
-                broadcast(f"{nombre} se ha unido al chat", None)
+                broadcast(f"{nombre} se ha unido al chat", None, clientes)
 
                 #mensaje de bienvenida al usuario
                 mensaje_bienvenida = "\nBienvenido al chat!!\n".encode('utf-8')
@@ -92,7 +58,7 @@ while True:
             mensaje = sock.recv(1024).decode('utf-8') #rev recibe y lee el mensaje, el 1024 indica la cantidad de bytes hasta donde se puede leer
             #el decode, decodifica el mensaje que se recibio en bytes, a tex        
             if mensaje: #si el mensaje contiene datos
-                broadcast(mensaje, sock)
+                broadcast(mensaje, sock, clientes)
             else: # si no, el cliente se desconecto
-                remover_clientes(sock)
+                remover_clientes(sock, clientes)
    

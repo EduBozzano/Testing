@@ -1,6 +1,7 @@
 import socket
 import threading
 import sys #para leer stdin
+from cliente_controller import recibir_mensajes
 
 #Creamos el socket cliente (con IPv4 y TCP)
 socket_cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -8,22 +9,6 @@ socket_cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 #Nos conectamos al servidor
 IP_SERVIDOR = 'localhost' #el nombre o ip del servidor creado
 PUERTO_SERVIDOR = 12345 #el puerto que pusimos al servidor
-
-def recibir_mensajes(socket_cliente):
-    while True:
-        try:
-            #Si el socket cliente tiene datos para mostrar lo guardamos
-            mensaje = socket_cliente.recv(1024)
-            if not mensaje: #si el mensaje esta vacio (0 bytes) entonces quiere decir que se cerro la conexion
-                print("Servidor desconectado")
-                socket_cliente.close()
-                break
-            else: #si contiene algo, lo mostramos
-                print("\n" + mensaje.decode('utf-8'))
-        except:
-            print("\nError en la conexión.")
-            socket_cliente.close()
-            break
 
 try:
     socket_cliente.connect((IP_SERVIDOR,PUERTO_SERVIDOR))#conectamos al servidor con el ip y el puerto correspondiente
@@ -46,9 +31,8 @@ hilo_recepcion.start()
 
 while True:
 
-    #Si el cliente no tiene datos, quiere decir que escribio algo
-    texto = input()#leemos el texto del usuario, stdin a diferencia de input, es mas rapido al ser de menor nivel
-    if texto.strip().lower() == "/salir": #stdin lee con los caracteres \n, no los borra como input, entonces strip() quita los \n \t del comienzo y/o final del texto leido
+    texto = input()#leemos el texto del usuario
+    if texto.strip().lower() == "/salir":
         print("Saliendo del chat...")
         socket_cliente.close() #cerramos el socket
         break
