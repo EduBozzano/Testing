@@ -18,6 +18,7 @@ def iniciar_servidor(host = 'localhost', puerto = 12345):
 
     #ponerlo para que escuche
     socket_servidor.listen()
+    print("\nServidor Activo")
 
     #ahora hacemos la logica para que se pueda aceptar a los cientes que tienen mensajes por enviar
     clientes: Dict[socket.socket, str] = {} #Definimos la lista de clientes
@@ -56,12 +57,16 @@ def iniciar_servidor(host = 'localhost', puerto = 12345):
                     socket_cliente.send(mensaje_bienvenida)
             else:
                 #quiere decir que un cliente envio un mensaje
-                mensaje = sock.recv(1024).decode('utf-8') #rev recibe y lee el mensaje, el 1024 indica la cantidad de bytes hasta donde se puede leer
-                #el decode, decodifica el mensaje que se recibio en bytes, a tex        
-                if mensaje: #si el mensaje contiene datos
-                    broadcast(mensaje, sock, clientes)
-                else: # si no, el cliente se desconecto
+                try:
+                    mensaje = sock.recv(1024).decode('utf-8') #rev recibe y lee el mensaje, el 1024 indica la cantidad de bytes hasta donde se puede leer
+                    #el decode, decodifica el mensaje que se recibio en bytes, a tex        
+                    if mensaje: #si el mensaje contiene datos
+                        broadcast(mensaje, sock, clientes)
+                    else: # si no, el cliente se desconecto
+                        remover_clientes(sock, clientes)
+                except:
                     remover_clientes(sock, clientes)
+                    continue
 
 if __name__ == "__main__":
     iniciar_servidor()

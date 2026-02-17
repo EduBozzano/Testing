@@ -29,17 +29,21 @@ hilo_recepcion = threading.Thread(target=recibir_mensajes, args=(socket_cliente,
 hilo_recepcion.daemon = True #Marca que el hilo muera al terminar de ejecutarse
 hilo_recepcion.start()
 
-while True:
+try:
+    while True:
 
-    texto = input()#leemos el texto del usuario
-    if texto.strip().lower() == "/salir":
-        print("Saliendo del chat...")
-        socket_cliente.close() #cerramos el socket
-        break
-        
-    else: #si no es /salir, entonces envia el mensaje
-        try:
-            socket_cliente.send(texto.encode('utf-8'))
-        except:
-            print('no se ha podido enviar el mensaje')
-
+        texto = input()#leemos el texto del usuario
+        if texto.strip().lower() == "/salir":
+            print("Saliendo del chat...")
+            socket_cliente.close() #cerramos el socket
+            break
+            
+        else: #si no es /salir, entonces envia el mensaje
+            try:
+                socket_cliente.send(texto.encode('utf-8'))
+            except:
+                print('no se ha podido enviar el mensaje')
+except:
+    print("\nSaliendo del Chat...")
+    socket_cliente.close()
+    sys.exit()
