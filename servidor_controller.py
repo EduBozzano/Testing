@@ -1,5 +1,4 @@
-import sys
-import socket
+import sys, socket
 from typing import Dict
 
 def broadcast(mensaje, socket_emisor, clientes: Dict[socket.socket, str]):

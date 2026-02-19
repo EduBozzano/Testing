@@ -1,11 +1,11 @@
-import socket
-import select
-import signal
+import socket, select, signal, threading
 from typing import Dict
-from servidor_controller import cerrar_servidor, broadcast, remover_clientes
+from servidor_controller import cerrar_servidor, broadcast, remover_clientes, nombre_disponible
 
-def iniciar_servidor(host = 'localhost', puerto = 12345):
-    signal.signal(signal.SIGINT, lambda sig, frame: cerrar_servidor(socket_servidor, clientes)) #esto captura el Ctrl + C para cerrar de manera adecuada el servidor
+def iniciar_servidor(host = 'localhost', puerto = 12345, stop_event=None):
+    # Registrar señal SOLO si estamos en el hilo principal
+    if threading.current_thread() is threading.main_thread():
+        signal.signal(signal.SIGINT, lambda sig, frame: cerrar_servidor(socket_servidor, clientes)) #esto captura el Ctrl + C para cerrar de manera adecuada el servidor
 
     #Creamos un socket servidor            #AF_INET Define la creacion del socket con el protocolo IPv4
     socket_servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)#SOCK_STEAM es para crear el socket con el protocolo TCP
@@ -24,7 +24,7 @@ def iniciar_servidor(host = 'localhost', puerto = 12345):
     clientes: Dict[socket.socket, str] = {} #Definimos la lista de clientes
     nombres_pendientes = [] #sockets que aun no enviaron su nombre 
 
-    while True:
+    while not (stop_event and stop_event.is_set()):
         sockets_activos = [socket_servidor] + list(clientes.keys()) + nombres_pendientes #Definimos una lista de sockets activos
 
         #con select, seleccionamos solo los sockets que tienen datos listos para enviar (mensajes)
@@ -42,6 +42,10 @@ def iniciar_servidor(host = 'localhost', puerto = 12345):
             elif sock in nombres_pendientes:
                 #Este cliente no mando su nombre todavia
                 nombre = sock.recv(1024).decode('utf-8').strip()
+                while not nombre_disponible(nombre, clientes):
+                    socket_cliente.send("Nombre ya en uso, pruebe con otro: ".encode('utf-8'))
+                    nombre = sock.recv(1024).decode('utf-8').strip()
+                    
                 if nombre:
                     #agregamos el socket y el nombre al diccionario clientes
                     clientes[sock] = nombre
