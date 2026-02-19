@@ -38,3 +38,6 @@ def cerrar_servidor(socket_servidor, clientes: Dict[socket.socket, str]):
         sys.exit()
     except:
         print("Sistema Cerrado Correctamente")
+
+def nombre_disponible(nombre, clientes):
+    return nombre not in clientes.values()
