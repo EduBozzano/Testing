@@ -34,4 +34,7 @@ def cerrar_servidor(socket_servidor, clientes: Dict[socket.socket, str]):
     
     #luego cerramos el servidor y salimos
     socket_servidor.close()
-    sys.exit()
+    try:
+        sys.exit()
+    except:
+        print("Sistema Cerrado Correctamente")

@@ -1,0 +1,19 @@
+Pruebas Unitarias
+-broadcast
+-remover_clientes
+-cerrar_servidor
+
+
+TDD
+Funcionalidad a agregar: Evitar nombres duplicados --> Paso 1: Red (test que falla), Paso 2: Green (hacer que pase), Paso 3: Refactor
+
+
+PRUEBAS DE INTEGRACIÓN
+-Levantar servidor en un hilo
+-Conectar 2 o 3 clientes
+-Mandar mensajes
+-Verificar que todos reciben correctamente
+
+PARA VERIFICAR COBERTURA
+pip install pytest-cov
+pytest --cov=.
