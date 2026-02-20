@@ -25,10 +25,14 @@ def iniciar_servidor(host = 'localhost', puerto = 12345, stop_event=None):
     nombres_pendientes = [] #sockets que aun no enviaron su nombre 
 
     while not (stop_event and stop_event.is_set()):
+
         sockets_activos = [socket_servidor] + list(clientes.keys()) + nombres_pendientes #Definimos una lista de sockets activos
 
         #con select, seleccionamos solo los sockets que tienen datos listos para enviar (mensajes)
-        sockets_listos, _, _ = select.select(sockets_activos, [], [], 1) #dentro del parentesis es (revisa si los sockets tienen datos, revisa si se puede escribir en el socket, revisa si el socket tiene errores, tiempo a esperar)
+        try:
+            sockets_listos, _, _ = select.select(sockets_activos, [], [], 1) #dentro del parentesis es (revisa si los sockets tienen datos, revisa si se puede escribir en el socket, revisa si el socket tiene errores, tiempo a esperar)
+        except ValueError:
+            break
 
         for sock in sockets_listos:
             if sock is socket_servidor:
@@ -41,9 +45,14 @@ def iniciar_servidor(host = 'localhost', puerto = 12345, stop_event=None):
                 nombres_pendientes.append(socket_cliente)
             elif sock in nombres_pendientes:
                 #Este cliente no mando su nombre todavia
-                nombre = sock.recv(1024).decode('utf-8').strip()
+                nombre_bytes = sock.recv(1024)
+                if not nombre_bytes:
+                    remover_clientes(sock, clientes)
+                    return
+                    
+                nombre = nombre_bytes.decode('utf-8').strip()
                 while not nombre_disponible(nombre, clientes):
-                    socket_cliente.send("Nombre ya en uso, pruebe con otro: ".encode('utf-8'))
+                    socket_cliente.send("Nombre ya en uso o invalido, pruebe con otro: ".encode('utf-8'))
                     nombre = sock.recv(1024).decode('utf-8').strip()
                     
                 if nombre:
@@ -62,8 +71,13 @@ def iniciar_servidor(host = 'localhost', puerto = 12345, stop_event=None):
             else:
                 #quiere decir que un cliente envio un mensaje
                 try:
-                    mensaje = sock.recv(1024).decode('utf-8') #rev recibe y lee el mensaje, el 1024 indica la cantidad de bytes hasta donde se puede leer
-                    #el decode, decodifica el mensaje que se recibio en bytes, a tex        
+                    mensaje_bytes = sock.recv(2024)
+                    if not mensaje_bytes:
+                        remover_clientes(sock, clientes)
+                        return
+
+                    mensaje = mensaje_bytes.decode('utf-8').strip() #rev recibe y lee el mensaje, el 1024 indica la cantidad de bytes hasta donde se puede leer
+                    #el decode, decodifica el mensaje que se recibio en bytes, a tex
                     if mensaje: #si el mensaje contiene datos
                         broadcast(mensaje, sock, clientes)
                     else: # si no, el cliente se desconecto

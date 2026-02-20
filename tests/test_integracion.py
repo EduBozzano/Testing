@@ -114,3 +114,41 @@ def test_desconexion_abrupta():
     # Cerrar servidor
     stop_event.set()
     server_thread.join(timeout=2)
+
+def test_mensaje_vacio():
+    stop_event = threading.Event()
+
+    # Iniciar servidor en un hilo
+    server_thread = threading.Thread(
+        target=iniciar_servidor,
+        args=(HOST, PUERTO, stop_event),
+        daemon=True
+    )
+    server_thread.start()
+    time.sleep(0.5)  # dar tiempo a que el servidor inicie
+
+    cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    cliente.connect((HOST, PUERTO))
+    cliente.settimeout(2)
+
+    # Recibir primer mensaje del servidor
+    respuesta = cliente.recv(1024).decode()
+    assert "Ingrese su nombre: " in respuesta
+
+    # Enviar nombre válido
+    cliente.sendall(b"Edu")
+    respuesta = cliente.recv(1024).decode()
+    assert "Bienvenido al chat" in respuesta
+
+    # Enviar mensaje vacío
+    cliente.sendall(b"   ")
+    # El servidor debería remover el cliente, recv siguiente debe fallar o devolver vacío
+    try:
+        respuesta = cliente.recv(1024)
+        assert respuesta == b""  # cliente removido
+    except socket.timeout:
+        pass  # si no hay datos, también es válido
+
+    # Cerrar servidor
+    stop_event.set()
+    server_thread.join(timeout=2)

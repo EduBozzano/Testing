@@ -30,7 +30,8 @@ def cerrar_servidor(socket_servidor, clientes: Dict[socket.socket, str]):
     #con el for desconectamos todos los clientes
     for cliente in list(clientes.keys()):
         cliente.close()
-    
+        del clientes[cliente]
+
     #luego cerramos el servidor y salimos
     socket_servidor.close()
     try:
